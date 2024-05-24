@@ -1,0 +1,46 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background: linear-gradient(to bottom, #0f0c29, #302b63, #24243e);
+    font-family: 'Press Start 2P', cursive;
+    color: #fff;
+}
+
+#game {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    border: 2px solid #fff;
+    background: linear-gradient(to bottom, #141e30, #243b55);
+    box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.5);
+}
+
+canvas {
+    background-color: #000;
+}
+
+#startScreen, #endScreen {
+    position: absolute;
+    text-align: center;
+    color: white;
+}
+
+#scoreboard {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+}
+
+#score, #highscore {
+    margin: 0;
+    padding: 5px;
+}
+
+
