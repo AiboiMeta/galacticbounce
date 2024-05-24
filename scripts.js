@@ -22,6 +22,9 @@ document.addEventListener("DOMContentLoaded", function() {
     let orbs = [];
     let obstacles = [];
     let particles = [];
+    let stars = [];
+    let planets = [];
+    let galaxies = [];
 
     let isSliding = false;
 
@@ -34,6 +37,8 @@ document.addEventListener("DOMContentLoaded", function() {
     const jumpSound = new Audio('jump.mp3');
     const collectSound = new Audio('collect.mp3');
     const slidingSound = new Audio('sliding.mp3');
+    const landSound = new Audio('land.mp3');
+    const gameoverSound = new Audio('gameover.mp3');
 
     backgroundMusic.loop = true;
     backgroundMusic.volume = 0.3;
@@ -60,6 +65,118 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+    class Star {
+        constructor(x, y, size, speed) {
+            this.x = x;
+            this.y = y;
+            this.size = size;
+            this.speed = speed;
+        }
+        update() {
+            this.x -= this.speed;
+            if (this.x < 0) this.x = canvas.width;
+        }
+        draw() {
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    class Planet {
+        constructor(x, y, size, color, speed) {
+            this.x = x;
+            this.y = y;
+            this.size = size;
+            this.color = color;
+            this.speed = speed;
+        }
+        update() {
+            this.x -= this.speed;
+            if (this.x < -this.size) this.x = canvas.width + this.size;
+        }
+        draw() {
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    class Galaxy {
+        constructor(x, y, size, color, speed) {
+            this.x = x;
+            this.y = y;
+            this.size = size;
+            this.color = color;
+            this.speed = speed;
+        }
+        update() {
+            this.x -= this.speed;
+            if (this.x < -this.size) this.x = canvas.width + this.size;
+        }
+        draw() {
+            ctx.strokeStyle = this.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+    }
+
+    function createStars() {
+        for (let i = 0; i < 100; i++) {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            const size = Math.random() * 2;
+            const speed = Math.random() * 0.5;
+            stars.push(new Star(x, y, size, speed));
+        }
+    }
+
+    function createPlanets() {
+        for (let i = 0; i < 5; i++) {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            const size = Math.random() * 20 + 10;
+            const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+            const speed = Math.random() * 0.3;
+            planets.push(new Planet(x, y, size, color, speed));
+        }
+    }
+
+    function createGalaxies() {
+        for (let i = 0; i < 3; i++) {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            const size = Math.random() * 30 + 20;
+            const color = `hsl(${Math.random() * 360}, 100%, 50%)`;
+            const speed = Math.random() * 0.2;
+            galaxies.push(new Galaxy(x, y, size, color, speed));
+        }
+    }
+
+    function drawBackground() {
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        stars.forEach(star => {
+            star.update();
+            star.draw();
+        });
+
+        planets.forEach(planet => {
+            planet.update();
+            planet.draw();
+        });
+
+        galaxies.forEach(galaxy => {
+            galaxy.update();
+            galaxy.draw();
+        });
+    }
+
     function handleParticles() {
         particles.forEach((particle, index) => {
             particle.update();
@@ -72,12 +189,15 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function drawPlayer() {
         ctx.fillStyle = `hsl(${frameCount % 360}, 100%, 50%)`;
+        ctx.shadowColor = `hsl(${frameCount % 360}, 100%, 50%)`;
+        ctx.shadowBlur = 20;
         ctx.fillRect(player.x, player.y, player.width, player.height);
+        ctx.shadowBlur = 0;
     }
 
     function createPlatform() {
         const y = Math.random() * (canvas.height - 100) + 50;
-        platforms.push({ x: canvas.width, y: y, width: platformWidth, height: platformHeight });
+        platforms.push({ x: canvas.width, y: y, width: platformWidth, height: platformHeight, direction: Math.random() > 0.5 ? 1 : -1 });
     }
 
     function drawPlatforms() {
@@ -99,6 +219,8 @@ document.addEventListener("DOMContentLoaded", function() {
     function updatePlatforms() {
         platforms.forEach(platform => {
             platform.x -= gameSpeed;
+            platform.y += platform.direction * 0.5; // Slight vertical movement
+            if (platform.y <= 50 || platform.y >= canvas.height - 100) platform.direction *= -1; // Change direction if it hits bounds
         });
 
         if (platforms.length > 0 && platforms[0].x + platformWidth < 0) {
@@ -190,6 +312,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 onPlatform = true;
                 score += 1;
                 updateScore();
+                landSound.play();
                 for (let i = 0; i < 5; i++) {
                     particles.push(new Particle(player.x + player.width / 2, player.y + player.height, `hsl(${frameCount % 360}, 100%, 50%)`));
                 }
@@ -223,6 +346,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 player.y < obstacle.y + obstacle.height &&
                 player.y + player.height > obstacle.y) {
                 gameOver = true;
+                gameoverSound.play();
                 endGame();
             }
         });
@@ -249,6 +373,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         if (player.y + player.height > canvas.height) {
             gameOver = true;
+            gameoverSound.play();
             endGame();
         }
 
@@ -258,32 +383,15 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    function drawBackground() {
-        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        gradient.addColorStop(0, `hsl(${frameCount % 360}, 100%, 50%)`);
-        gradient.addColorStop(1, `hsl(${(frameCount + 180) % 360}, 100%, 50%)`);
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        // Draw moving stars
-        for (let i = 0; i < 100; i++) {
-            const x = Math.random() * canvas.width;
-            const y = Math.random() * canvas.height;
-            const size = Math.random() * 2;
-            const starColor = `rgba(255, 255, 255, ${Math.random()})`;
-            ctx.fillStyle = starColor;
-            ctx.beginPath();
-            ctx.arc(x, y, size, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-
     function endGame() {
         gameStarted = false;
         platforms = [];
         orbs = [];
         obstacles = [];
         particles = [];
+        stars = [];
+        planets = [];
+        galaxies = [];
         frameCount = 0;
         gameSpeed = 2;
         slidingSound.pause();
@@ -292,7 +400,6 @@ document.addEventListener("DOMContentLoaded", function() {
         finalScoreDisplay.textContent = `Final Score: ${finalScore}`;
         finalMultiplierDisplay.textContent = `Multiplier: x${multiplier}`;
         
-        // Update high score if final score is higher
         if (finalScore > highscore) {
             highscore = finalScore;
             highscoreDisplay.textContent = `Highscore: ${highscore}`;
@@ -310,6 +417,9 @@ document.addEventListener("DOMContentLoaded", function() {
         gameOver = false;
         gameStarted = true;
         endScreen.style.display = 'none';
+        createStars();
+        createPlanets();
+        createGalaxies();
         drawScore();
         gameLoop();
     }
@@ -350,7 +460,7 @@ document.addEventListener("DOMContentLoaded", function() {
                         console.log('Error playing background music:', error);
                     });
                 }
-                gameLoop();
+                resetGame();
             } else if (gameOver) {
                 resetGame();
             } else {
@@ -362,3 +472,4 @@ document.addEventListener("DOMContentLoaded", function() {
 
     drawScore();
 });
+
