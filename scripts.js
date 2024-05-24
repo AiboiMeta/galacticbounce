@@ -5,16 +5,9 @@ document.addEventListener("DOMContentLoaded", function() {
     const endScreen = document.getElementById("endScreen");
     const scoreDisplay = document.getElementById("score");
     const highscoreDisplay = document.getElementById("highscore");
-    const finalScoreDisplay = document.createElement('p');
-    finalScoreDisplay.id = "finalScore";
-    endScreen.appendChild(finalScoreDisplay);
-    const finalMultiplierDisplay = document.createElement('p');
-    finalMultiplierDisplay.id = "finalMultiplier";
-    endScreen.appendChild(finalMultiplierDisplay);
-    const multiplierDisplay = document.createElement('p');
-    multiplierDisplay.id = "multiplier";
-    const scoreboard = document.getElementById("scoreboard");
-    scoreboard.appendChild(multiplierDisplay);
+    const finalScoreDisplay = document.getElementById("finalScore");
+    const finalMultiplierDisplay = document.getElementById("finalMultiplier");
+    const multiplierDisplay = document.getElementById("multiplier");
     canvas.width = 400;
     canvas.height = 600;
 
@@ -46,13 +39,13 @@ document.addEventListener("DOMContentLoaded", function() {
     backgroundMusic.volume = 0.3;
 
     class Particle {
-        constructor(x, y) {
+        constructor(x, y, color) {
             this.x = x;
             this.y = y;
             this.size = Math.random() * 5 + 2;
             this.speedX = Math.random() * 2 - 1;
             this.speedY = Math.random() * 2 - 1;
-            this.color = 'rgba(255, 255, 0, 0.8)';
+            this.color = color;
         }
         update() {
             this.x += this.speedX;
@@ -78,7 +71,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function drawPlayer() {
-        ctx.fillStyle = "#f72585";
+        ctx.fillStyle = `hsl(${frameCount % 360}, 100%, 50%)`;
         ctx.fillRect(player.x, player.y, player.width, player.height);
     }
 
@@ -88,9 +81,18 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function drawPlatforms() {
-        ctx.fillStyle = "#00f5d4";
         platforms.forEach(platform => {
+            const gradient = ctx.createLinearGradient(platform.x, platform.y, platform.x + platform.width, platform.y + platform.height);
+            gradient.addColorStop(0, `hsl(${frameCount % 360}, 100%, 50%)`);
+            gradient.addColorStop(1, `hsl(${(frameCount + 180) % 360}, 100%, 50%)`);
+            ctx.fillStyle = gradient;
             ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+
+            // Add glowing effect
+            ctx.shadowColor = `hsl(${frameCount % 360}, 100%, 50%)`;
+            ctx.shadowBlur = 20;
+            ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            ctx.shadowBlur = 0;
         });
     }
 
@@ -114,11 +116,17 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function drawOrbs() {
-        ctx.fillStyle = "#ffcc00";
         orbs.forEach(orb => {
+            ctx.fillStyle = `hsl(${(frameCount + 90) % 360}, 100%, 50%)`;
             ctx.beginPath();
             ctx.arc(orb.x, orb.y, orb.radius, 0, Math.PI * 2);
             ctx.fill();
+
+            // Add glowing effect
+            ctx.shadowColor = `hsl(${(frameCount + 90) % 360}, 100%, 50%)`;
+            ctx.shadowBlur = 20;
+            ctx.fill();
+            ctx.shadowBlur = 0;
         });
     }
 
@@ -142,9 +150,15 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function drawObstacles() {
-        ctx.fillStyle = "#ff0044";
         obstacles.forEach(obstacle => {
+            ctx.fillStyle = `hsl(${(frameCount + 180) % 360}, 100%, 50%)`;
             ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+
+            // Add glowing effect
+            ctx.shadowColor = `hsl(${(frameCount + 180) % 360}, 100%, 50%)`;
+            ctx.shadowBlur = 20;
+            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            ctx.shadowBlur = 0;
         });
     }
 
@@ -177,7 +191,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 score += 1;
                 updateScore();
                 for (let i = 0; i < 5; i++) {
-                    particles.push(new Particle(player.x + player.width / 2, player.y + player.height));
+                    particles.push(new Particle(player.x + player.width / 2, player.y + player.height, `hsl(${frameCount % 360}, 100%, 50%)`));
                 }
             }
         });
@@ -244,6 +258,26 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+    function drawBackground() {
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, `hsl(${frameCount % 360}, 100%, 50%)`);
+        gradient.addColorStop(1, `hsl(${(frameCount + 180) % 360}, 100%, 50%)`);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw moving stars
+        for (let i = 0; i < 100; i++) {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            const size = Math.random() * 2;
+            const starColor = `rgba(255, 255, 255, ${Math.random()})`;
+            ctx.fillStyle = starColor;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
     function endGame() {
         gameStarted = false;
         platforms = [];
@@ -285,6 +319,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        drawBackground(); // Draw moving background
         handleParticles();
         drawPlayer();
         drawPlatforms();
