@@ -5,12 +5,23 @@ document.addEventListener("DOMContentLoaded", function() {
     const endScreen = document.getElementById("endScreen");
     const scoreDisplay = document.getElementById("score");
     const highscoreDisplay = document.getElementById("highscore");
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const finalScoreDisplay = document.createElement('p');
+    finalScoreDisplay.id = "finalScore";
+    endScreen.appendChild(finalScoreDisplay);
+    const finalMultiplierDisplay = document.createElement('p');
+    finalMultiplierDisplay.id = "finalMultiplier";
+    endScreen.appendChild(finalMultiplierDisplay);
+    const multiplierDisplay = document.createElement('p');
+    multiplierDisplay.id = "multiplier";
+    const scoreboard = document.getElementById("scoreboard");
+    scoreboard.appendChild(multiplierDisplay);
+    canvas.width = 400;
+    canvas.height = 600;
 
     let frameCount = 0;
     let score = 0;
     let highscore = 0;
+    let multiplier = 1;
     let gameSpeed = 2;
     let gameStarted = false;
     let gameOver = false;
@@ -19,9 +30,9 @@ document.addEventListener("DOMContentLoaded", function() {
     let obstacles = [];
     let particles = [];
 
-    let isSliding = false; // Track if the player is sliding on a platform
+    let isSliding = false;
 
-    const player = { x: canvas.width / 2, y: canvas.height / 2, width: 20, height: 20, dy: 0, gravity: 0.6, lift: -10 };
+    const player = { x: 200, y: 300, width: 20, height: 20, dy: 0, gravity: 0.6, lift: -10 };
 
     const platformWidth = 80;
     const platformHeight = 10;
@@ -29,7 +40,7 @@ document.addEventListener("DOMContentLoaded", function() {
     const backgroundMusic = new Audio('synthwave.mp3');
     const jumpSound = new Audio('jump.mp3');
     const collectSound = new Audio('collect.mp3');
-    const slidingSound = new Audio('sliding.mp3'); // Added sliding sound
+    const slidingSound = new Audio('sliding.mp3');
 
     backgroundMusic.loop = true;
     backgroundMusic.volume = 0.3;
@@ -152,7 +163,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function checkCollision() {
-        let onPlatform = false; // Track if the player is on a platform
+        let onPlatform = false;
 
         platforms.forEach(platform => {
             if (player.x < platform.x + platform.width &&
@@ -163,9 +174,8 @@ document.addEventListener("DOMContentLoaded", function() {
                 player.y = platform.y - player.height;
                 player.dy = 0;
                 onPlatform = true;
-                score += 1; // 1 point for landing on a platform
+                score += 1;
                 updateScore();
-                // Create particles when sliding
                 for (let i = 0; i < 5; i++) {
                     particles.push(new Particle(player.x + player.width / 2, player.y + player.height));
                 }
@@ -186,7 +196,7 @@ document.addEventListener("DOMContentLoaded", function() {
             const dy = player.y - orb.y;
             const distance = Math.sqrt(dx * dx + dy * dy);
             if (distance < player.width / 2 + orb.radius) {
-                score += 50; // 50 points for collecting an orb
+                multiplier += 1;
                 collectSound.play();
                 orbs.splice(index, 1);
                 updateScore();
@@ -206,6 +216,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function updateScore() {
         scoreDisplay.textContent = `Score: ${score}`;
+        multiplierDisplay.textContent = `Multiplier: x${multiplier}`;
         if (score > highscore) {
             highscore = score;
             highscoreDisplay.textContent = `Highscore: ${highscore}`;
@@ -214,6 +225,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function drawScore() {
         scoreDisplay.textContent = `Score: ${score}`;
+        multiplierDisplay.textContent = `Multiplier: x${multiplier}`;
         highscoreDisplay.textContent = `Highscore: ${highscore}`;
     }
 
@@ -242,14 +254,24 @@ document.addEventListener("DOMContentLoaded", function() {
         gameSpeed = 2;
         slidingSound.pause();
         isSliding = false;
-        drawScore();
+        let finalScore = score * multiplier;
+        finalScoreDisplay.textContent = `Final Score: ${finalScore}`;
+        finalMultiplierDisplay.textContent = `Multiplier: x${multiplier}`;
+        
+        // Update high score if final score is higher
+        if (finalScore > highscore) {
+            highscore = finalScore;
+            highscoreDisplay.textContent = `Highscore: ${highscore}`;
+        }
+
         endScreen.style.display = 'block';
     }
 
     function resetGame() {
-        player.y = canvas.height / 2;
+        player.y = 300;
         player.dy = 0;
         score = 0;
+        multiplier = 1;
         gameSpeed = 2;
         gameOver = false;
         gameStarted = true;
@@ -276,7 +298,7 @@ document.addEventListener("DOMContentLoaded", function() {
         checkCollision();
 
         frameCount++;
-        gameSpeed += 0.0005;  // Increase game speed gradually
+        gameSpeed += 0.0005;
 
         if (!gameOver) {
             requestAnimationFrame(gameLoop);
@@ -303,24 +325,5 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
-    canvas.addEventListener("touchstart", function(event) {
-        if (!gameStarted && !gameOver) {
-            gameStarted = true;
-            startScreen.style.display = 'none';
-            if (backgroundMusic.paused) {
-                backgroundMusic.play().catch(error => {
-                    console.log('Error playing background music:', error);
-                });
-            }
-            gameLoop();
-        } else if (gameOver) {
-            resetGame();
-        } else {
-            player.dy = player.lift;
-            jumpSound.play();
-        }
-    });
-
     drawScore();
 });
-
