@@ -5,10 +5,8 @@ document.addEventListener("DOMContentLoaded", function() {
     const endScreen = document.getElementById("endScreen");
     const scoreDisplay = document.getElementById("score");
     const highscoreDisplay = document.getElementById("highscore");
-    const finalScore = document.getElementById("finalScore");
-    const finalHighscore = document.getElementById("finalHighscore");
-    canvas.width = 400;
-    canvas.height = 600;
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
     let frameCount = 0;
     let score = 0;
@@ -23,7 +21,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
     let isSliding = false; // Track if the player is sliding on a platform
 
-    const player = { x: 200, y: 300, width: 20, height: 20, dy: 0, gravity: 0.6, lift: -10 };
+    const player = { x: canvas.width / 2, y: canvas.height / 2, width: 20, height: 20, dy: 0, gravity: 0.6, lift: -10 };
 
     const platformWidth = 80;
     const platformHeight = 10;
@@ -249,7 +247,7 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 
     function resetGame() {
-        player.y = 300;
+        player.y = canvas.height / 2;
         player.dy = 0;
         score = 0;
         gameSpeed = 2;
@@ -305,5 +303,24 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     });
 
+    canvas.addEventListener("touchstart", function(event) {
+        if (!gameStarted && !gameOver) {
+            gameStarted = true;
+            startScreen.style.display = 'none';
+            if (backgroundMusic.paused) {
+                backgroundMusic.play().catch(error => {
+                    console.log('Error playing background music:', error);
+                });
+            }
+            gameLoop();
+        } else if (gameOver) {
+            resetGame();
+        } else {
+            player.dy = player.lift;
+            jumpSound.play();
+        }
+    });
+
     drawScore();
 });
+
